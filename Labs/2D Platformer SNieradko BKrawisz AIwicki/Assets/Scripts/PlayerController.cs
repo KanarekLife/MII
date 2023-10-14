@@ -1,8 +1,5 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
+using UnityEngine.Serialization;
 
 public class PlayerController : MonoBehaviour
 {
@@ -12,48 +9,74 @@ public class PlayerController : MonoBehaviour
     [Space(10)]
     [Range(0.01f, 20.0f)] [SerializeField] private float jumpForce = 6f;
 
-    private Rigidbody2D rigidBody;
+    [FormerlySerializedAs("GroundLayer")] public LayerMask groundLayer;
 
-    public LayerMask GroundLayer;
+    private Animator _animator;
+    private Rigidbody2D _rigidBody;
+    
+    private const float RayLength = 1.5f;
+    
+    private bool _isWalking;
+    private bool _isFacingRight = true;
+    private int _score;
+    private static readonly int Grounded = Animator.StringToHash("isGrounded");
+    private static readonly int IsWalking = Animator.StringToHash("isWalking");
 
-    private const float rayLength = 1.5f;
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Bonus"))
+        {
+            _score++;
+            Debug.Log($"Score: {_score}");
+            other.gameObject.SetActive(false);
+        }
+    }
+
+    private void Flip()
+    {
+        _isFacingRight = !_isFacingRight;
+        var scale = transform.localScale;
+        scale.x *= -1;
+        transform.localScale = scale;
+    }
 
     private void Awake()
     {
-        rigidBody = GetComponent<Rigidbody2D>();
+        _rigidBody = GetComponent<Rigidbody2D>();
+        _animator = GetComponent<Animator>();
     }
 
     private bool IsGrounded()
     {
-        return Physics2D.Raycast(this.transform.position, Vector2.down, rayLength, GroundLayer.value);
+        return Physics2D.Raycast(this.transform.position, Vector2.down, RayLength, groundLayer.value);
     }
 
     private void Jump()
     {
         if (IsGrounded())
         {
-            rigidBody.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            _rigidBody.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
             Debug.Log("Jumping");
         }
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
+        _isWalking = false;
+        
         if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D))
         {
-            transform.Translate(moveSpeed * Time.deltaTime, 0.0f, 0.0f, Space.World);            
+            _isWalking = true;
+            transform.Translate(moveSpeed * Time.deltaTime, 0.0f, 0.0f, Space.World);
+            if (!_isFacingRight) Flip();
         }
         
         if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A))
         {
-            transform.Translate(-moveSpeed * Time.deltaTime, 0.0f, 0.0f, Space.World);            
+            _isWalking = true;
+            transform.Translate(-moveSpeed * Time.deltaTime, 0.0f, 0.0f, Space.World);      
+            if (_isFacingRight) Flip();
         }
 
         if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
@@ -61,6 +84,9 @@ public class PlayerController : MonoBehaviour
             Jump();
         }
         
-        Debug.DrawRay(transform.position, rayLength * Vector3.down, Color.white);
+        Debug.DrawRay(transform.position, RayLength * Vector3.down, Color.white);
+        
+        _animator.SetBool(Grounded, IsGrounded());
+        _animator.SetBool(IsWalking, _isWalking);
     }
 }

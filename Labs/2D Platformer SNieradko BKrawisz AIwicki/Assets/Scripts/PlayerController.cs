@@ -7,7 +7,7 @@ public class PlayerController : MonoBehaviour
     [Range(0.01f, 20.0f)] [SerializeField] private float moveSpeed = 0.1f;
     
     [Space(10)]
-    [Range(0.01f, 20.0f)] [SerializeField] private float jumpForce = 6f;
+    [Range(0.01f, 100.0f)] [SerializeField] private float jumpForce = 6f;
 
     [FormerlySerializedAs("GroundLayer")] public LayerMask groundLayer;
 

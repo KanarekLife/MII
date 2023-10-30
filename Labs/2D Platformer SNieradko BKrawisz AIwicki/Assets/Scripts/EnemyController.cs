@@ -7,10 +7,10 @@ public class EnemyController : MonoBehaviour
 {
     [Header("Movement parameters")]
     [Range(0.01f, 20.0f)] [SerializeField] private float moveSpeed = 0.1f;
-    
+    [Range(0.01f, 20.0f)][SerializeField] private float moveRange = 10.0f;
+
     private bool _isFacingRight = false;
     private bool _isMovingRight = false;
-    private float _moveRange = 10.0f;
     private float _startPositionX;
     private Animator _animator;
     private static readonly int IsDead = Animator.StringToHash("isDead");
@@ -54,6 +54,7 @@ public class EnemyController : MonoBehaviour
             {
                 _animator.SetBool(IsDead, true);
                 StartCoroutine(KillOnAnimationEnd());
+                GameManager.instance.AddDefeatedEnemy(1);
             }
         }
     }
@@ -75,7 +76,7 @@ public class EnemyController : MonoBehaviour
     {
         if (_isMovingRight)
         {
-            if (transform.position.x < _startPositionX + _moveRange)
+            if (transform.position.x < _startPositionX + moveRange)
             {
                 MoveRight();
             }
@@ -86,7 +87,7 @@ public class EnemyController : MonoBehaviour
         }
         else
         {
-            if (transform.position.x > _startPositionX - _moveRange)
+            if (transform.position.x > _startPositionX - moveRange)
             {
                 MoveLeft();
             }

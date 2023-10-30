@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -9,8 +10,6 @@ public class PlayerController : MonoBehaviour
     
     [Space(10)]
     [Range(0.01f, 100.0f)] [SerializeField] private float jumpForce = 6f;
-    
-    public GameObject textToShow;
 
     [FormerlySerializedAs("GroundLayer")] public LayerMask groundLayer;
 
@@ -21,11 +20,7 @@ public class PlayerController : MonoBehaviour
     
     private bool _isWalking;
     private bool _isFacingRight = true;
-    private int _score;
-    private int _lives = 3;
     private Vector2 _startPosition;
-    private int _keysFound = 0;
-    private const int KeysNumber = 3;
     private static readonly int Grounded = Animator.StringToHash("isGrounded");
     private static readonly int IsWalking = Animator.StringToHash("isWalking");
 
@@ -33,43 +28,46 @@ public class PlayerController : MonoBehaviour
     {
         if (other.CompareTag("Bonus"))
         {
-            _score++;
-            Debug.Log($"Score: {_score}");
+            GameManager.instance.AddPoints(1);
             other.gameObject.SetActive(false);
-        }else if (other.CompareTag("Enemy"))
+        } else if (other.CompareTag("Enemy"))
         {
             if (transform.position.y > other.gameObject.transform.position.y)
             {
-                _score++;
+                GameManager.instance.AddPoints(1);
                 Debug.Log("Killed an enemy");
             }
             else
             {
                Death();
             }
-        }else if (other.CompareTag("Key"))
+        } else if (other.CompareTag("Key"))
         {
-            _keysFound++;
-            Debug.Log("Key found!");
+            GameManager.instance.AddKey();
             other.gameObject.SetActive(false);
-        }else if (other.CompareTag("EndOfStage") && _keysFound == KeysNumber)
+        } else if (other.CompareTag("EndOfStage"))
         {
-            textToShow.gameObject.GetComponent<TextMeshProUGUI>().text = "Game finished";
-            textToShow.gameObject.SetActive(true);
-        }else if (other.CompareTag("EndOfStage") && _keysFound < KeysNumber)
-        {
-            textToShow.gameObject.GetComponent<TextMeshProUGUI>().text = "Not enough keys";
-            textToShow.gameObject.SetActive(true);
-        }else if (other.CompareTag("FallLevel"))
+            GameManager.instance.PlayerReachedEnd();
+        } else if (other.CompareTag("FallLevel"))
         {
             Death();
+        } else if (other.CompareTag("MovingPlatform"))
+        {
+            transform.SetParent(other.transform);
+        }
+    }
+
+    void OnTriggerExit2D(Collider2D other)
+    {
+        if (other.CompareTag("MovingPlatform"))
+        {
+            transform.SetParent(null);
         }
     }
 
     public void IncreaseNumberOfLives()
     {
-        _lives++;
-        Debug.Log($"Current number of lives: {_lives}");
+        GameManager.instance.AddLives(1);
     }
 
     private void Flip()
@@ -82,7 +80,6 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
-        textToShow.gameObject.SetActive(false);
         _rigidBody = GetComponent<Rigidbody2D>();
         _animator = GetComponent<Animator>();
         _startPosition = transform.position;
@@ -95,13 +92,8 @@ public class PlayerController : MonoBehaviour
 
     public void Death()
     {
+        GameManager.instance.AddLives(-1);
         transform.position = _startPosition;
-        _lives--;
-        if (_lives <= 0)
-        {
-            _lives = 3;
-            Debug.Log("Player was killed");
-        }
     }
 
     private void Jump()
@@ -116,6 +108,8 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
+        if (GameManager.instance.currentGameState != GameState.GS_GAME) return;
+
         _isWalking = false;
         
         if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D))

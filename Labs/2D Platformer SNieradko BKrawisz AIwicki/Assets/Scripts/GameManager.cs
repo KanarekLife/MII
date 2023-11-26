@@ -4,20 +4,29 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using TMPro;
+using UnityEngine.SceneManagement;
 
-public enum GameState { GS_PAUSEMENU, GS_GAME, GS_LEVELCOMPLETED, GS_GAME_OVER }
+public enum GameState { GS_PAUSEMENU, GS_GAME, GS_LEVELCOMPLETED, GS_GAME_OVER, GS_OPTIONS }
 
 public class GameManager : MonoBehaviour
 {
     public GameState currentGameState = GameState.GS_PAUSEMENU;
     [Header("UI stuff")]
     public Canvas inGameCanvas;
+    public Canvas pauseMenuCanvas;
+    public Canvas levelCompletedCanvas;
+    public Canvas optionsCanvas;
     public TMP_Text bigMessageText;
     public TMP_Text scoreText;
     public TMP_Text defeatedEnemiesText;
     public TMP_Text timeText;
+    public TMP_Text qualityLabel;
+    public Slider audioSlider;
     public Image[] keysTab;
     public Image[] livesTab;
+    public const string keyHighScore = "HighScoreLevel1";
+    public TMP_Text scoreLabel;
+    public TMP_Text highScoreLabel;
 
     public static GameManager instance;
 
@@ -80,27 +89,19 @@ public class GameManager : MonoBehaviour
             bigMessageText.text = "Not enough keys";
             return;
         }
+        
+        AddPoints(_lives * 100);
 
         LevelCompleted();
     }
 
-    void SetGameState(GameState newGameState)
+    private void SetGameState(GameState newGameState)
     {
-        switch(newGameState)
+        bigMessageText.text = newGameState switch
         {
-            case GameState.GS_PAUSEMENU:
-                bigMessageText.text = "Paused";
-                break;
-            case GameState.GS_GAME:
-                bigMessageText.text = "";
-                break;
-            case GameState.GS_LEVELCOMPLETED:
-                bigMessageText.text = "Level completed!";
-                break;
-            case GameState.GS_GAME_OVER:
-                bigMessageText.text = "Game Over";
-                break;
-        }
+            GameState.GS_GAME_OVER => "Game Over",
+            _ => bigMessageText.text
+        };
 
         if (newGameState == GameState.GS_GAME)
         {
@@ -113,6 +114,26 @@ public class GameManager : MonoBehaviour
             Time.timeScale = 0;
         }
 
+        if (newGameState == GameState.GS_LEVELCOMPLETED)
+        {
+            var currentScene = SceneManager.GetActiveScene();
+            if (currentScene.name == "Level1")
+            {
+                var highScore = PlayerPrefs.GetInt(keyHighScore);
+                if (highScore < _score)
+                {
+                    highScore = _score;
+                    PlayerPrefs.SetInt(keyHighScore, highScore);
+                }
+
+                scoreLabel.text = "Your Score = " + _score;
+                highScoreLabel.text = "Your best score = " + highScore;
+            }
+        }
+
+        pauseMenuCanvas.enabled = newGameState == GameState.GS_PAUSEMENU;
+        optionsCanvas.enabled = newGameState == GameState.GS_OPTIONS;
+        levelCompletedCanvas.enabled = newGameState == GameState.GS_LEVELCOMPLETED;
         currentGameState = newGameState;
     }
 
@@ -134,6 +155,11 @@ public class GameManager : MonoBehaviour
     public void GameOver()
     {
         SetGameState(GameState.GS_GAME_OVER);
+    }
+
+    public void Options()
+    {
+        SetGameState(GameState.GS_OPTIONS);
     }
 
     public void ResetGame()
@@ -160,8 +186,17 @@ public class GameManager : MonoBehaviour
             instance = this;
         }
 
+        if (!PlayerPrefs.HasKey(keyHighScore))
+        {
+            PlayerPrefs.SetInt(keyHighScore, 0);
+        }
+
+        qualityLabel.text = "Quality: " + QualitySettings.names[QualitySettings.GetQualityLevel()];
+        SetVolume(1.0f);
+        audioSlider.SetValueWithoutNotify(1.0f);
+        
         ResetGame();
-        PauseMenu();
+        InGame();
     }
 
     // Start is called before the first frame update
@@ -197,6 +232,8 @@ public class GameManager : MonoBehaviour
                     ResetGame();
                     InGame();
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
 
             _keyStillPressed = true;
@@ -206,5 +243,52 @@ public class GameManager : MonoBehaviour
         {
             _keyStillPressed = false;
         }
+    }
+
+    public void OnResumeButtonClicked()
+    {
+        InGame();
+    }
+
+    public void OnRestartButtonClicked()
+    {
+        StartCoroutine(LoadScene(SceneManager.GetActiveScene().name));
+    }
+
+    public void OnReturnToMainMenuButtonClicked()
+    {
+        StartCoroutine(LoadScene("Scenes/MainMenu"));
+    }
+
+    public void OnOptionsButtonClicked()
+    {
+        Options();
+    }
+
+    private static IEnumerator LoadScene(string sceneName)
+    {
+        var operation = SceneManager.LoadSceneAsync(sceneName);
+
+        while (!operation.isDone)
+        {
+            yield return null;
+        }
+    }
+
+    public void IncreaseQualityLevel()
+    {
+        QualitySettings.IncreaseLevel();
+        qualityLabel.text = "Quality: " + QualitySettings.names[QualitySettings.GetQualityLevel()];
+    }
+
+    public void DecreaseQualityLevel()
+    {
+        QualitySettings.DecreaseLevel();
+        qualityLabel.text = "Quality: " + QualitySettings.names[QualitySettings.GetQualityLevel()];
+    }
+
+    public void SetVolume(float vol)
+    {
+        AudioListener.volume = vol;
     }
 }

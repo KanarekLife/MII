@@ -13,8 +13,15 @@ public class PlayerController : MonoBehaviour
 
     [FormerlySerializedAs("GroundLayer")] public LayerMask groundLayer;
 
+    [SerializeField] public AudioClip bonusCollectedSound;
+    [SerializeField] public AudioClip keyCollectedSound;
+    [SerializeField] public AudioClip enemyDefeatedSound;
+    [SerializeField] public AudioClip potionCollectedSound;
+    [SerializeField] public AudioClip deathSound;
+    
     private Animator _animator;
     private Rigidbody2D _rigidBody;
+    private AudioSource _audioSource;
     
     private const float RayLength = 1.5f;
     
@@ -30,12 +37,14 @@ public class PlayerController : MonoBehaviour
         {
             GameManager.instance.AddPoints(1);
             other.gameObject.SetActive(false);
+            _audioSource.PlayOneShot(bonusCollectedSound, AudioListener.volume);
         } else if (other.CompareTag("Enemy"))
         {
             if (transform.position.y > other.gameObject.transform.position.y)
             {
                 GameManager.instance.AddPoints(1);
                 Debug.Log("Killed an enemy");
+                _audioSource.PlayOneShot(enemyDefeatedSound, AudioListener.volume);
             }
             else
             {
@@ -45,6 +54,7 @@ public class PlayerController : MonoBehaviour
         {
             GameManager.instance.AddKey();
             other.gameObject.SetActive(false);
+            _audioSource.PlayOneShot(keyCollectedSound, AudioListener.volume);
         } else if (other.CompareTag("EndOfStage"))
         {
             GameManager.instance.PlayerReachedEnd();
@@ -54,6 +64,9 @@ public class PlayerController : MonoBehaviour
         } else if (other.CompareTag("MovingPlatform"))
         {
             transform.SetParent(other.transform);
+        } else if (other.CompareTag("Potion"))
+        {
+            _audioSource.PlayOneShot(potionCollectedSound, AudioListener.volume);
         }
     }
 
@@ -82,6 +95,7 @@ public class PlayerController : MonoBehaviour
     {
         _rigidBody = GetComponent<Rigidbody2D>();
         _animator = GetComponent<Animator>();
+        _audioSource = GetComponent<AudioSource>();
         _startPosition = transform.position;
     }
 
@@ -93,6 +107,7 @@ public class PlayerController : MonoBehaviour
     public void Death()
     {
         GameManager.instance.AddLives(-1);
+        _audioSource.PlayOneShot(deathSound, AudioListener.volume);
         transform.position = _startPosition;
     }
 

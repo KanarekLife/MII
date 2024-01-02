@@ -31,12 +31,16 @@ public class PlayerController : MonoBehaviour
     private static readonly int Grounded = Animator.StringToHash("isGrounded");
     private static readonly int IsWalking = Animator.StringToHash("isWalking");
 
+    public GameObject collectionObject;
+    public GameObject specialCollectionObject;
+
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Bonus"))
         {
             GameManager.instance.AddPoints(1);
             other.gameObject.SetActive(false);
+            Instantiate(collectionObject, other.gameObject.transform.position, Quaternion.identity);
             _audioSource.PlayOneShot(bonusCollectedSound, AudioListener.volume);
         } else if (other.CompareTag("Enemy"))
         {
@@ -54,6 +58,7 @@ public class PlayerController : MonoBehaviour
         {
             GameManager.instance.AddKey();
             other.gameObject.SetActive(false);
+            Instantiate(specialCollectionObject, other.gameObject.transform.position, Quaternion.identity);
             _audioSource.PlayOneShot(keyCollectedSound, AudioListener.volume);
         } else if (other.CompareTag("EndOfStage"))
         {

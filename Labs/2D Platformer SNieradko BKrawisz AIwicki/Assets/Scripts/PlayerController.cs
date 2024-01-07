@@ -106,7 +106,12 @@ public class PlayerController : MonoBehaviour
 
     private bool IsGrounded()
     {
-        return Physics2D.Raycast(this.transform.position, Vector2.down, RayLength, groundLayer.value);
+        Vector2 position1 = transform.position;
+        position1.x -= 0.6f;
+        Vector2 position2 = transform.position;
+        position2.x += 0.6f;
+        return Physics2D.Raycast(position1    , Vector2.down, RayLength, groundLayer.value) ||
+               Physics2D.Raycast(position2, Vector2.down, RayLength, groundLayer.value);
     }
 
     public void Death()

@@ -12,6 +12,7 @@ public class GameManager_193319 : MonoBehaviour
 {
     public GameState_193319 currentGameState_193319 = GameState_193319.GS_PAUSEMENU;
     [Header("UI stuff")]
+    private float game_over_timer = 0;
     public Canvas inGameCanvas;
     public Canvas pauseMenuCanvas;
     public Canvas levelCompletedCanvas;
@@ -203,6 +204,7 @@ public class GameManager_193319 : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        game_over_timer = 0;
         
     }
 
@@ -211,11 +213,24 @@ public class GameManager_193319 : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+
+        if (bigMessageText.text == "Game Over")
+        {
+            game_over_timer += 1 ;
+
+            if (game_over_timer > 20*60)
+            {
+                game_over_timer = 0;
+                bigMessageText.text = "";
+                ResetGame();
+                InGame();
+            }
+        }
         if(currentGameState_193319 == GameState_193319.GS_GAME)
         {
             updateTime();
         }
-
+        
         if (Input.GetKey(KeyCode.Escape) && !_keyStillPressed)
         {
 
@@ -230,8 +245,9 @@ public class GameManager_193319 : MonoBehaviour
                 case GameState_193319.GS_LEVELCOMPLETED:
                     break;
                 case GameState_193319.GS_GAME_OVER:
-                    ResetGame();
-                    InGame();
+                    
+                    //ResetGame();
+                    //InGame();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

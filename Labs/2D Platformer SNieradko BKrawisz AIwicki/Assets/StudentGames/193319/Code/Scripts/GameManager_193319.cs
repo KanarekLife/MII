@@ -81,7 +81,7 @@ public class GameManager_193319 : MonoBehaviour
     public void updateTime()
     {
         _timer += Time.deltaTime;
-        timeText.text = string.Format("{0:00}:{1:00}", (int)(_timer/60), (int)_timer%60);
+        timeText.text = string.Format("{0:00}:{1:00}:{2:000}", (int)(_timer/60), (int)_timer%60, (int)(_timer*1000)%1000);
     }
 
     public void PlayerReachedEnd()
@@ -222,7 +222,7 @@ public class GameManager_193319 : MonoBehaviour
             {
                 game_over_timer = 0;
                 bigMessageText.text = "";
-                ResetGame();
+                OnRestartButtonClicked();
                 InGame();
             }
         }
